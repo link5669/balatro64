@@ -1,6 +1,6 @@
-/libdragon
-/build
-/.libdragon
-balatro64.pak
-balatro64.rtc
-balatro64.z64
+libdragon
+build
+.libdragon
+*.pak
+*.rtc
+*.z64
