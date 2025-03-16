@@ -1,6 +1,6 @@
-libdragon
-build
-.libdragon
+libdragon/
+build/
+.libdragon/
 *.pak
 *.rtc
 *.z64
