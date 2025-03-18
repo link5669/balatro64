@@ -18,11 +18,13 @@ PokerHand detect_hand() {
         }
         if (i == 4) hand = FLUSH;
     }
+
     Rank lowestRank = ACE;
     for (int i = 0; i < 5; i++) {
         Rank currRank = state.deck[state.selected_cards[i]].rank;
         if (currRank < lowestRank) lowestRank = currRank;
     }
+
     Rank rankPtr = lowestRank;
     for (int i = 0; i < 5; i++) {
         for (int i = 0; i < 5; i++) {
@@ -30,9 +32,11 @@ PokerHand detect_hand() {
             if (rankPtr+1 == currRank) rankPtr++;
         }
     }
+
     if (rankPtr - 4 == lowestRank) {
         if (hand == FLUSH) hand = STRAIGHT_FLUSH;
         else hand = STRAIGHT;
     }
+
     return hand;
 }
