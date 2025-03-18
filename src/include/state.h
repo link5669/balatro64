@@ -8,10 +8,13 @@ typedef struct State {
     Card deck[52];
     int hand_size;
     int hand[8];
+    int score;
+    SortType sort_type;
 } State;
 
 void init_state();
 void select_card(int card_index);
+void deselect_card(int card_index);
 void add_to_hand(int card_index);
 bool card_is_selected(int draw_index);
 

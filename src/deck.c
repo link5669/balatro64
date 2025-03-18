@@ -54,6 +54,7 @@ int rank_comp(const void* a, const void* b) {
 void sort_hand(SortType sort_type) {
     if (sort_type == SUITE)
         qsort(state.hand, 8, sizeof(int), (int (*)(const void*, const void*))suite_comp);
-    else
+    else if (sort_type == RANK)
         qsort(state.hand, 8, sizeof(int), (int (*)(const void*, const void*))rank_comp);
+    state.sort_type = sort_type;
 }

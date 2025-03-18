@@ -63,6 +63,7 @@ void draw_card_border(surface_t *disp, int highlighted) {
 }
 
 void draw_hand(surface_t *disp, int highlighted_card) {
+    sort_hand(state.sort_type);
     for (int i = 0; i < state.hand_size; i++) {
         draw_card(disp, 240+(i*30), 300, state.deck[state.hand[i]].rank, state.deck[state.hand[i]].suite, i == highlighted_card);
     }
@@ -134,8 +135,12 @@ int main(void)
             }
         }
         if (c_data.c[0].A) {
-            graphics_draw_box(disp, 240, 280, 480, 90, graphics_make_color(0, 180, 0, 255));
-            select_card(state.hand[highlighted_card]);
+            graphics_draw_box(disp, 240, 280, 200, 90, graphics_make_color(0, 180, 0, 255));
+            if (card_is_selected(highlighted_card)) {
+                deselect_card(state.hand[highlighted_card]);
+            } else {
+                select_card(state.hand[highlighted_card]);
+            }
             for (int i = 0; i < state.hand_size; i++) {
                 draw_card(disp, 240+(i*30), card_is_selected(i) ? 280: 300, state.deck[state.hand[i]].rank, state.deck[state.hand[i]].suite, i == highlighted_card);
             }
@@ -167,11 +172,29 @@ int main(void)
             for (int i = 0; i < 8; i++) {
                 graphics_draw_text(disp, 20, 20 + (i * 10), state.deck[state.hand[i]].used ? "true" : "false");
             }
-            graphics_draw_box(disp, 240, 280, 480, 90, graphics_make_color(0, 180, 0, 255));
+            graphics_draw_box(disp, 240, 280, 200, 90, graphics_make_color(0, 180, 0, 255));
             draw_hand(disp, highlighted_card);
             draw_card_border( disp,  highlighted_card);
         }
         if (c_data.c[0].right) {
+            PokerHand hand = detect_hand();
+            Score score = get_score(hand);
+            state.score += score.chips * score.mult;
+            char str[20];
+            sprintf(str, "%d", state.score);
+            graphics_draw_text(disp, 20, 115, str);
+            for (int i = 0; i < 5; i++) { //num of selected cards
+                state.deck[state.selected_cards[i]].used = true;
+                state.selected_cards[i] = -1;
+                int rand = pick_card();
+                add_to_hand(rand);
+            }
+            for (int i = 0; i < 8; i++) {
+                graphics_draw_text(disp, 20, 20 + (i * 10), state.deck[state.hand[i]].used ? "true" : "false");
+            }
+            graphics_draw_box(disp, 240, 280, 200, 90, graphics_make_color(0, 180, 0, 255));
+            draw_hand(disp, highlighted_card);
+            draw_card_border( disp,  highlighted_card);
         }
         display_show(disp);
     }

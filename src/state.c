@@ -16,12 +16,22 @@ void init_state() {
     for (int i = 0; i < state.hand_size; i++) {
         state.hand[i] = -1;
     }
+    state.sort_type = -1;
 }
 
 void select_card(int card_index) {
     for (int i = 0; i < 5; i++) {
         if (state.selected_cards[i] == -1) {
             state.selected_cards[i] = card_index;
+            break;
+        }
+    }
+}
+
+void deselect_card(int card_index) {
+    for (int i = 0; i < 5; i++) {
+        if (state.selected_cards[i] == card_index) {
+            state.selected_cards[i] = -1;
             break;
         }
     }

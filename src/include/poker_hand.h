@@ -17,5 +17,11 @@ typedef enum {
     FLUSH_FIVE
 } PokerHand;
 
+typedef struct Score {
+    int chips;
+    int mult;
+} Score;
+
 PokerHand detect_hand();
+Score get_score(PokerHand hand);
 #endif
