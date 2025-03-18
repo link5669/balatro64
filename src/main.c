@@ -1,12 +1,12 @@
-#include <stdio.h>
 #include <malloc.h>
-#include <string.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <libdragon.h>
 #include "include/deck.h"
+#include "include/poker_hand.h"
 #include "include/state.h"
+
+State state;
 
 void draw_card(surface_t *disp, int x, int y,  Rank rank,  Suite suite, bool selected) {
     graphics_draw_box(disp, x, y, 40, 70, graphics_make_color(230, 230, 230, 255));
@@ -52,19 +52,19 @@ void draw_card(surface_t *disp, int x, int y,  Rank rank,  Suite suite, bool sel
     }
 }
 
-void draw_card_border(surface_t *disp, int highlighted, State state) {
+void draw_card_border(surface_t *disp, int highlighted) {
     for (int i = 0; i < state.hand_size; i++) {
         int color = highlighted  == i? graphics_make_color(50, 50, 240, 255):graphics_make_color(0, 0, 0, 255);
         int x = 240+(i*30);
-        int y = card_is_selected(state, i) ? 280: 300;
-        graphics_draw_line(disp, x, y, x+40, y, color);
+        int y = card_is_selected(i) ? 280: 300;
+        graphics_draw_line(disp, x, y, i != state.hand_size -1 ? x+30 : x+40, y, color);
         graphics_draw_line(disp, x, y, x, y+70, color);
     }
 }
 
-void draw_hand(surface_t *disp, State state, int highlighted_card) {
+void draw_hand(surface_t *disp, int highlighted_card) {
     for (int i = 0; i < state.hand_size; i++) {
-        draw_card(disp, 240+(i*30), 300, state.hand[i].rank, state.hand[i].suite, i == highlighted_card);
+        draw_card(disp, 240+(i*30), 300, state.deck[state.hand[i]].rank, state.deck[state.hand[i]].suite, i == highlighted_card);
     }
 }
 
@@ -74,6 +74,18 @@ void draw_ui(surface_t *disp) {
     graphics_draw_box(disp, 5, 100, 170, 40, graphics_make_color(40, 40, 40, 255));
 
     graphics_draw_text(disp, 8, 105, "Your\nScore");
+    graphics_draw_box(disp, 310, 400, 140, 40, graphics_make_color(40, 40, 40, 255));
+    graphics_draw_box(disp, 315, 405, 60, 30, graphics_make_color(200, 40, 40, 255));
+    graphics_draw_box(disp, 385, 405, 60, 30, graphics_make_color(200, 40, 40, 255));
+    graphics_draw_text(disp, 317, 407, "LT");
+    graphics_draw_text(disp, 428, 407, "RT");
+}
+
+const char* rank_to_string(Rank rank) {
+    static const char* ranks[] = {
+        "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"
+    };
+    return ranks[rank];
 }
 
 int main(void)
@@ -84,14 +96,14 @@ int main(void)
     timer_init();
 
     surface_t *disp;
-    State state;
     struct controller_data c_data;
     int highlighted_card = 0;
-    state = init_state(state);
+    init_state();
 
     disp = display_get();
     graphics_fill_screen(disp, graphics_make_color(0, 180, 0, 255));
     display_show(disp);
+    draw_ui(disp);
 
     while (1)
     {
@@ -100,36 +112,66 @@ int main(void)
 
         c_data = get_keys_down();
 
-        draw_ui(disp);
         if (c_data.c[0].B)
         {
             for (int i = 0; i < state.hand_size; i++) {
-                Card rand = pick_card(state.deck);
-                state = add_to_hand(state, rand);
-                draw_card(disp, 240+(i*30), 300, state.hand[i].rank, state.hand[i].suite, i == highlighted_card);
-                draw_card_border( disp,  highlighted_card, state);
-
+                int rand = pick_card();
+                add_to_hand(rand);
+                draw_card(disp, 240+(i*30), 300, state.deck[state.hand[i]].rank, state.deck[state.hand[i]].suite, i == highlighted_card);
+                draw_card_border( disp,  highlighted_card);
             }
         }
         if (c_data.c[0].C_right) {
             if (highlighted_card != state.hand_size -1) {
                 highlighted_card++;
-                draw_card_border( disp,  highlighted_card, state);
+                draw_card_border( disp,  highlighted_card);
             }
         }
         if (c_data.c[0].C_left) {
             if (highlighted_card != 0) {
                 highlighted_card--;
-                draw_card_border( disp,  highlighted_card, state);
+                draw_card_border( disp,  highlighted_card);
             }
         }
         if (c_data.c[0].A) {
             graphics_draw_box(disp, 240, 280, 480, 90, graphics_make_color(0, 180, 0, 255));
-            state = select_card(state, state.hand[highlighted_card]);
+            select_card(state.hand[highlighted_card]);
             for (int i = 0; i < state.hand_size; i++) {
-                draw_card(disp, 240+(i*30), i == highlighted_card ? 280: 300, state.hand[i].rank, state.hand[i].suite, i == highlighted_card);
+                draw_card(disp, 240+(i*30), card_is_selected(i) ? 280: 300, state.deck[state.hand[i]].rank, state.deck[state.hand[i]].suite, i == highlighted_card);
             }
-            draw_card_border( disp,  highlighted_card, state);
+            draw_card_border( disp,  highlighted_card);
+            PokerHand hand = detect_hand();
+            if (hand == STRAIGHT) {
+                graphics_draw_text(disp, 20, 300, "Straight");
+            } else if (hand == FLUSH) {
+                graphics_draw_text(disp, 20, 300, "Flush");
+            }
+        }
+        if (c_data.c[0].L) {
+            sort_hand(RANK);
+            draw_hand(disp, highlighted_card);
+            draw_card_border( disp,  highlighted_card);
+        }
+        if (c_data.c[0].R) {
+            sort_hand(SUITE);
+            draw_hand(disp, highlighted_card);
+            draw_card_border( disp,  highlighted_card);
+        }
+        if (c_data.c[0].left) { //discard
+            for (int i = 0; i < 5; i++) { //num of selected cards
+                state.deck[state.selected_cards[i]].used = true;
+                state.selected_cards[i] = -1;
+                int rand = pick_card();
+                add_to_hand(rand);
+            }
+            for (int i = 0; i < 8; i++) {
+                graphics_draw_text(disp, 20, 20 + (i * 10), state.deck[state.hand[i]].used ? "true" : "false");
+            }
+            graphics_draw_box(disp, 240, 280, 480, 90, graphics_make_color(0, 180, 0, 255));
+            draw_hand(disp, highlighted_card);
+            draw_card_border( disp,  highlighted_card);
+        }
+        if (c_data.c[0].right) {
         }
         display_show(disp);
     }
